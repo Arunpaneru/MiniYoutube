@@ -1,6 +1,6 @@
 import {v2 as cloudinary} from 'cloudinary';
 import fs from"fs"
-import { CLIENT_RENEG_LIMIT } from 'tls';
+
  //CLOUDINARY CONFIGURATION         
 cloudinary.config({ 
   cloud_name:process.env.CLOUDINARY_CLOUD_NAME, 
@@ -8,7 +8,7 @@ cloudinary.config({
   api_secret:process.env.CLOUDINARY_API_SECRET,
 });
 //UPLOADING FILE TO CLOUDINARY
-const fileUploadOnCloudinary= async(localFilePath)=>{
+const fileUploadOnCloudinary = async(localFilePath)=>{
     try {
         if(!localFilePath) return "file path doesn't exist"
         //FILE UPLOADING 

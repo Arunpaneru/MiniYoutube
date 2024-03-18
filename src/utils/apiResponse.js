@@ -6,3 +6,4 @@ this.message=message
 this.sucess=statusCode<400
     }
 }
+export {apiResponse}
