@@ -182,26 +182,28 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw apiError(401, "unauthorized request");
   }
   try {
-    const decodedToken = jwt.verify(incommingRefreshToken, REFRESH_TOKEN_SECRET);
-  
+    const decodedToken = jwt.verify(
+      incommingRefreshToken,
+      REFRESH_TOKEN_SECRET
+    );
+
     const user = await User.findById(decodedToken?._id);
-  
+
     if (!user) {
       throw new apiError(401, "Invalid refresh Token");
     }
-  
+
     if (incommingRefreshToken !== user?.refreshToken) {
       throw new apiError("refresh access token is expired or used");
     }
-  
+
     const options = {
       httpOnly: true,
       secure: true,
     };
-    const { accessToken, newRefreshToken } = await generateAccessAndRefreshToken(
-      user._id
-    );
-  
+    const { accessToken, newRefreshToken } =
+      await generateAccessAndRefreshToken(user._id);
+
     return res
       .status(200)
       .cookie("accessToken", accessToken)
@@ -214,8 +216,118 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
-    throw new apiError(401,error?.message || "invalid refresh token")
+    throw new apiError(401, error?.message || "invalid refresh token");
   }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+//password change
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user?._id);
+
+  const isPasswordCorrect = await user.isPasswordCorrect();
+
+  if (!isPasswordCorrect) {
+    throw new apiError(401, "Incorrect old password ");
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res.status(200).json(new apiResponse(200, {}, "password changed"));
+});
+
+//getting current user
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(200, req.user, "current user fetched sucessfully");
+});
+
+//update textbased data
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, userName, email } = await req.body;
+
+  if (!fullName || !userName || !email) {
+    throw new apiError(400, "all fields are required");
+  }
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName,
+        userName,
+        email,
+      },
+    },
+    { new: true }
+  ).select("-password");
+  return res
+    .status(200)
+    .json(new apiResponse(200, user, "accountDetails updated sucessfully"));
+});
+
+//updating files data
+const updateAvatar = asyncHandler(async(req,res)=>{
+   const avatarLocalPath = await req.files?.path
+
+   if(!avatarLocalPath)
+   {
+    throw new apiError(400,"avatar file is required")
+   }
+   const avatar = await fileUploadOnCloudinary(avatarLocalPath)
+
+   if(!avatar.url){
+throw new apiError(400,"during avatar updation error occured while uploading avatar")
+   }
+
+   const user = User.findByIdAndUpdate(req.user._id,{
+    $set:{
+      avatar:avatar.url
+    }
+   },
+  {
+    new:true
+  }
+  ).select("-password")
+return res.status(200).json(200,user,"avatar updated sucessfully")
+}) 
+//update coverImage
+const updateCoverImage = asyncHandler(async(req,res)=>{
+  const coverImageLocalPath = await req.files?.path
+
+  if(!coverImageLocalPath)
+  {
+   throw new apiError(400,"coverImage file is required")
+  }
+  const coverImage = await fileUploadOnCloudinary(coverImageLocalPath)
+
+  if(!coverImage.url){
+throw new apiError(400,"during coverImage updation error occured while uploading avatar")
+  }
+
+  const user = User.findByIdAndUpdate(req.user._id,{
+   $set:{
+    coverImage:coverImage.url
+   }
+  },
+ {
+   new:true
+ }
+ ).select("-password")
+return res.status(200).json(200,user,"coverImage updated sucessfully")
+}) 
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccountDetails,
+  updateAvatar,
+  updateCoverImage,
+};
