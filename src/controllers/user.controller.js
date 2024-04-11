@@ -5,6 +5,7 @@ import { fileUploadOnCloudinary } from "../utils/fileUpload.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
 
+
 //Function that calls access token generation and refresh token generation methods
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -152,8 +153,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+        refreshToken:1,
       },
     },
     {
@@ -184,7 +185,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   try {
     const decodedToken = jwt.verify(
       incommingRefreshToken,
-      REFRESH_TOKEN_SECRET
+      process.env.REFRESH_TOKEN_SECRET
     );
 
     const user = await User.findById(decodedToken?._id);
@@ -249,9 +250,12 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 //update textbased data
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, userName, email } = await req.body;
+  const { fullName, email,userName } = await req.body;
+  // console.log("updateAccountDetails:")
+  // console.log("fullName:",fullName)
+  // console.log("email:",email)
 
-  if (!fullName || !userName || !email) {
+  if (!fullName  || !email || !userName) {
     throw new apiError(400, "all fields are required");
   }
   const user = await User.findByIdAndUpdate(
@@ -272,7 +276,8 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 //updating files data
 const updateAvatar = asyncHandler(async(req,res)=>{
-   const avatarLocalPath = await req.files?.path
+  console.log("updateAvatar req :",req.file)
+   const avatarLocalPath = await req.file?.path
 
    if(!avatarLocalPath)
    {
@@ -297,7 +302,7 @@ return res.status(200).json( new apiResponse(200,user,"avatar updated sucessfull
 }) 
 //update coverImage
 const updateCoverImage = asyncHandler(async(req,res)=>{
-  const coverImageLocalPath = await req.files?.path
+  const coverImageLocalPath = await req.file?.path
 
   if(!coverImageLocalPath)
   {
@@ -354,7 +359,7 @@ const getUserChannelProfile = asyncHandler(async(req,res) => {
     },
     
       channelSubscribedToCount : {
-        $size : "subscribedTo"
+        $size : "$subscribedTo"
       },
       isSubscribed:{
         $cond : {
@@ -387,7 +392,7 @@ const getWatchHistory = asyncHandler(async(req,res) => {
   const user = await User.aggregate([
     {
       $match:{
-        _id: new mongooseAggregatePaginate.Types.ObjectId(req.user._id)
+        _id: req.user?._id
       }
     },
     {
@@ -426,7 +431,7 @@ const getWatchHistory = asyncHandler(async(req,res) => {
       }
     },
   ]) 
-  return res.status(200).json(apiResponse(200,user[0].watchHistory,"watchHistory fetched sucessfully"))
+  return res.status(200).json( new apiResponse(200,user[0].watchHistory,"watchHistory fetched sucessfully"))
 })
 
 export {
