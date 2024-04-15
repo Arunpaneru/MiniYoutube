@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+import { apiError } from "./apiError";
 
 //CLOUDINARY CONFIGURATION
 cloudinary.config({
@@ -25,4 +26,18 @@ const fileUploadOnCloudinary = async (localFilePath) => {
     fs.unlinkSync(localFilePath);
   }
 };
-export { fileUploadOnCloudinary };
+
+const filedeleteFromCloudinary = async(deleting_id,resourcetype ="image") =>{
+  try {
+    if(!deleting_id){
+      throw apiError(400,"id for deletion is empty")
+    }
+    await cloudinary.uploader.destroy(deleting_id,{
+      resource_type:resourcetype
+    })
+
+  } catch (error) {
+    throw apiError(404,"error occured during deletion of old file from cloudinary")
+  }
+}
+export { fileUploadOnCloudinary,filedeleteFromCloudinarydeleteFromCloudinary };

@@ -68,7 +68,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // console.log("coverImage response is",coverImage);
 
   if (!avatar) {
-    throw new apiError(400, "avatar is missing");
+    throw new apiError(400, "avatar response is missing after uploading on cloudinary ");
   }
 
   const user = await User.create({
